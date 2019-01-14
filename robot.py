@@ -2,6 +2,7 @@
 
 import magicbot
 import wpilib
+import ctre
 
 from automations.hatch import HatchController
 from components.hatch import Hatch
@@ -16,7 +17,7 @@ class Robot(magicbot.MagicRobot):
         self.top_puncher = wpilib.Solenoid(0)
         self.left_puncher = wpilib.Solenoid(1)
         self.right_puncher = wpilib.Solenoid(2)
-        self.actuator_arm = wpilib.Solenoid(3)
+        self.actuator_arm = ctre.TalonSRX(3)
 
         self.joystick = wpilib.Joystick(0)
         self.gamepad = wpilib.XboxController(1)
@@ -32,6 +33,9 @@ class Robot(magicbot.MagicRobot):
 
         if self.gamepad.getAButtonPressed():
             self.hatch.retract()
+
+        if self.gamepad.getXButtonPressed():
+            self.hatch.toggle_puncher()
 
 
 if __name__ == "__main__":

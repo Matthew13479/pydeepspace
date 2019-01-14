@@ -9,24 +9,33 @@ class Hatch:
     actuator_arm: ctre.TalonSRX
 
     def __init__(self):
-        self.puncher = False
+        self.punch_on = False
         self.retracter = True
+        self.last_puncher = None
+        self.last_retracter = None
 
     def setup(self):
         """This is called after variables are injected by magicbot."""
 
     def on_enable(self):
         """This is called whenever the robot transitions to being enabled."""
+        self.last_puncher = None
+        self.last_retracter = None
 
     def execute(self):
         """Run at the end of every control loop iteration."""
+        if self.last_puncher != self.punch_on:
+            self.top_puncher.set(self.punch_on)
+            self.left_puncher.set(self.punch_on)
+            self.right_puncher.set(self.punch_on)
+
+            self.last_puncher = self.punch_on
 
     def punch(self):
-        self.top_puncher.set(True)
-        self.left_puncher.set(True)
-        self.right_puncher.set(True)
+        self.punch_on = True
 
     def retract(self):
-        self.top_puncher.set(False)
-        self.left_puncher.set(False)
-        self.right_puncher.set(False)
+        self.punch_on = False
+
+    def toggle_puncher(self):
+        self.punch_on = not self.punch_on

@@ -3,7 +3,6 @@
 import magicbot
 import wpilib
 import ctre
-
 from automations.hatch import HatchController
 from components.hatch import Hatch
 
@@ -11,6 +10,7 @@ from components.hatch import Hatch
 class Robot(magicbot.MagicRobot):
 
     hatch: Hatch
+    hatch_controller: HatchController
 
     def createObjects(self):
         """Create motors and stuff here."""
@@ -21,6 +21,9 @@ class Robot(magicbot.MagicRobot):
 
         self.joystick = wpilib.Joystick(0)
         self.gamepad = wpilib.XboxController(1)
+        self.top_limit_switch = wpilib.DigitalInput(1)
+        self.left_limit_switch = wpilib.DigitalInput(2)
+        self.right_limit_switch = wpilib.DigitalInput(3)
 
     def teleopInit(self):
         """Initialise driver control."""
@@ -29,10 +32,10 @@ class Robot(magicbot.MagicRobot):
     def teleopPeriodic(self):
         """Allow the drivers to control the robot."""
         if self.gamepad.getBButtonPressed():
-            self.hatch.punch()
+            self.hatch_controller.punching()
 
-        if self.gamepad.getAButtonPressed():
-            self.hatch.retract()
+        if self.gamepad.getBButtonReleased():
+            self.hatch_controller.retracting()
 
         if self.gamepad.getXButtonPressed():
             self.hatch.toggle_puncher()

@@ -6,7 +6,8 @@ class Hatch:
     top_puncher: wpilib.Solenoid
     left_puncher: wpilib.Solenoid
     right_puncher: wpilib.Solenoid
-    actuator_arm: ctre.TalonSRX
+
+    self.all_limit_switch = self.top_limit_switch or self.left_limit_switch or self.right_limit_switch
 
     def __init__(self):
         self.punch_on = False
@@ -39,3 +40,12 @@ class Hatch:
 
     def toggle_puncher(self):
         self.punch_on = not self.punch_on
+        
+    def hatch_in(self):
+        if self.all_limit_switch.get() = True:
+            return True
+        else:
+            return False
+            
+
+

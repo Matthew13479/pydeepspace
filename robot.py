@@ -4,30 +4,6 @@ import math
 import ctre
 import magicbot
 import wpilib
-<<<<<<< HEAD
-import ctre
-from automations.hatch import HatchController
-from components.hatch import Hatch
-
-
-class Robot(magicbot.MagicRobot):
-
-    hatch: Hatch
-    hatch_controller: HatchController
-
-    def createObjects(self):
-        """Create motors and stuff here."""
-        self.top_puncher = wpilib.Solenoid(0)
-        self.left_puncher = wpilib.Solenoid(1)
-        self.right_puncher = wpilib.Solenoid(2)
-        self.actuator_arm = ctre.TalonSRX(3)
-
-        self.joystick = wpilib.Joystick(0)
-        self.gamepad = wpilib.XboxController(1)
-        self.top_limit_switch = wpilib.DigitalInput(1)
-        self.left_limit_switch = wpilib.DigitalInput(2)
-        self.right_limit_switch = wpilib.DigitalInput(3)
-=======
 from networktables import NetworkTables
 
 from automations.hatch import HatchController
@@ -111,7 +87,6 @@ class Robot(magicbot.MagicRobot):
     def disabledPeriodic(self):
         self.chassis.set_inputs(0, 0, 0)
         self.imu.resetHeading()
->>>>>>> hatch
 
     def teleopInit(self):
         """Initialise driver control."""
@@ -119,16 +94,6 @@ class Robot(magicbot.MagicRobot):
 
     def teleopPeriodic(self):
         """Allow the drivers to control the robot."""
-<<<<<<< HEAD
-        if self.gamepad.getBButtonPressed():
-            self.hatch_controller.punching()
-
-        if self.gamepad.getBButtonReleased():
-            self.hatch_controller.retracting()
-
-        if self.gamepad.getXButtonPressed():
-            self.hatch.toggle_puncher()
-=======
         # self.chassis.heading_hold_off()
 
         throttle = (1 - self.joystick.getThrottle()) / 2
@@ -186,7 +151,6 @@ class Robot(magicbot.MagicRobot):
                 module.name + "_drive_motor_output",
                 module.drive_motor.getMotorOutputPercent(),
             )
->>>>>>> hatch
 
 
 if __name__ == "__main__":

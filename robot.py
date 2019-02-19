@@ -235,7 +235,7 @@ class Robot(magicbot.MagicRobot):
         if self.gamepad.getYButtonPressed():
             self.cargo.intake_depot()
 
-        # Toggles the Hold Heading
+        # Toggles the Heading Hold
         if self.joystick.getRawButtonPressed(8):
             if self.chassis.hold_heading:
                 self.chassis.heading_hold_off()

@@ -1,7 +1,12 @@
-from components.vision import Vision
-from magicbot.state_machine import StateMachine, state
-from pyswervedrive.chassis import SwerveChassis
 from magicbot import tunable
+from magicbot.state_machine import StateMachine, state
+
+from components.hatch import Hatch
+from components.cargo import Intake
+from components.vision import Vision
+from pyswervedrive.chassis import SwerveChassis
+
+from utilities.functions import rotate_vector
 
 
 class Aligner(StateMachine):
@@ -19,49 +24,81 @@ class Aligner(StateMachine):
     vision: Vision
 
     def setup(self):
-        self.loop_counter = 0
         self.successful = False
-        self.hatch_deposit = 0
-        self.hatch_intake = 1
-        self.cargo_outake = 2
-        self.mode = self.hatch_deposit
+        self.last_vision = 0
 
-    target_tape_kP_x = tunable(0.5)  # forwards
-    target_tape_kP_y = tunable(1)  # m/s
-    target_tape_tolerance = tunable(0.05)  # % of camera view
+    alignment_speed = tunable(1.0)  # m/s
+    alignment_kp_y = tunable(1.5)
 
     @state(first=True)
+    def wait_for_vision(self):
+        if self.vision.fiducial_in_sight:
+            self.next_state("target_tape_align")
+
+    @state(must_finish=True)
     def target_tape_align(self, initial_call, state_tm):
         """
         Align with the objective using the vision tape above the objective.
 
-        The robot will try to correct errors untill they are within tolerance
+        The robot will try to correct errors until they are within tolerance
         by strafing and moving in a hyberbolic curve towards the target.
         """
-        self.chassis.heading_hold_off()
         if initial_call:
-            self.loop_counter = 0
             self.successful = False
-        error = self.vision.get_target_tape_error()
-        if error is None:
-            self.chassis.set_inputs(0, -0.5, 0, field_oriented=False)
-            if state_tm > 2.5:
-                self.successful = True
-                self.chassis.set_inputs(0, 0, 0)
-                self.done()
-        else:
-            vy = error * self.target_tape_kP_y
-            vx = (1 - abs(error)) * self.target_tape_kP_x
-            self.chassis.set_inputs(vy, -vx, 0, field_oriented=False)
-            # Rotate our co-ordinate system because the hatch mechanism is
-            # on the 'side' of the robot
-            if self.vision.within_deposit_range:
-                self.next_state("success")
+            self.last_vision = state_tm
+            self.chassis.automation_running = True
 
-    @state
-    def success(self, state_tm):
-        self.chassis.set_inputs(0, -0.5, 0, field_oriented=False)
-        if state_tm > 0.5:
-            self.successful = True
-            self.chassis.set_inputs(0, 0, 0)
+        if (self.vision.fiducial_x < 0.1) or not self.vision.fiducial_in_sight:
+            self.chassis.set_inputs(self.alignment_speed, 0, 0, field_oriented=False)
+            if state_tm - self.last_vision > 0.5:
+                self.chassis.set_inputs(0, 0, 0)
+                self.next_state("success")
+        else:
+            self.last_vision = state_tm
+            fiducial_x, fiducial_y, delta_heading = self.vision.get_fiducial_position()
+            if fiducial_x > 0:
+                # Target in front of us means we are using the hatch camera - move forwards
+                vx = self.alignment_speed
+            else:
+                # Target behind us means we are using the cargo camera - move backwards
+                vx = -self.alignment_speed
+            vy = fiducial_y * self.alignment_kp_y
+            vx, vy = rotate_vector(vx, vy, -delta_heading)
+            self.chassis.set_inputs(vx, vy, 0, field_oriented=False)
+
+    @state(must_finish=True)
+    def success(self):
+        self.done()
+
+    def done(self):
+        super().done()
+        self.chassis.automation_running = False
+
+
+class HatchDepositAligner(Aligner):
+
+    VERBOSE_LOGGING = True
+    hatch: Hatch
+
+    @state(must_finish=True)
+    def success(self, state_tm, initial_call):
+        if initial_call:
+            self.hatch.punch()
+        if state_tm > 1:
             self.done()
+
+
+class CargoDepositAligner(Aligner):
+
+    VERBOSE_LOGGING = True
+    intake: Intake
+
+    @state(must_finish=True)
+    def success(self):
+        self.intake.deposit()
+        self.done()
+
+
+class HatchIntakeAligner(Aligner):
+    VERBOSE_LOGGING = True
+    hatch: Hatch
